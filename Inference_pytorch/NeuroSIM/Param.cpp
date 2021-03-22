@@ -184,7 +184,7 @@ Param::Param() {
 		gamma = 0.5; 	// switching activity of DFF in shifter-add and accumulator
 		delta = 0.15; 	// switching activity of adder 
 		epsilon = 0.05; // switching activity of control circuits
-		zeta = 1.23; 	// post-layout energy increase
+		zeta = 1.22; 	// post-layout energy increase
 	}		
 	
 	/***************************************** user defined design options and parameters *****************************************/
