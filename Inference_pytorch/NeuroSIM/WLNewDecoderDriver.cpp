@@ -152,8 +152,8 @@ void WLNewDecoderDriver::CalculateArea(double _newHeight, double _newWidth, Area
 		// Resistance
 		// TG
 		double resTgN, resTgP;
-		resTgN = CalculateOnResistance(widthTgN, NMOS, inputParameter.temperature, tech);
-		resTgP = CalculateOnResistance(widthTgP, PMOS, inputParameter.temperature, tech);
+		resTgN = CalculateOnResistance(widthTgN, NMOS, inputParameter.temperature, tech) * LINEAR_REGION_RATIO;
+		resTgP = CalculateOnResistance(widthTgP, PMOS, inputParameter.temperature, tech) * LINEAR_REGION_RATIO;
 		resTg = 1/(1/resTgN + 1/resTgP);
 
 		// Capacitance
