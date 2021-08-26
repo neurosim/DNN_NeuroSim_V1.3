@@ -77,13 +77,12 @@ class QConv2d(nn.Conv2d):
                                 remainder = torch.fmod(X_decimal, cellRange)*mask
                                 # retention
                                 remainder = wage_quantizer.Retention(remainder,self.t,self.v,self.detect,self.target)
-                                variation = np.random.normal(0, self.vari, list(weight.size())).astype(np.float32)
                                 X_decimal = torch.round((X_decimal-remainder)/cellRange)*mask
                                 # Now also consider weight has on/off ratio effects
                                 # Here remainder is the weight mapped to Hardware, so we introduce on/off ratio in this value
                                 # the range of remainder is [0, cellRange-1], we truncate it to [lower, upper]
                                 remainderQ = (upper-lower)*(remainder-0)+(cellRange-1)*lower   # weight cannot map to 0, but to Gmin
-                                remainderQ = remainderQ + remainderQ*torch.from_numpy(variation).cuda()
+                                remainderQ = remainderQ + remainderQ*torch.normal(0., torch.ones_like(remainderQ)*self.vari).cuda()
                                 outputPartial= F.conv2d(input, remainderQ*mask, self.bias, self.stride, self.padding, self.dilation, self.groups)
                                 outputDummyPartial= F.conv2d(input, dummyP*mask, self.bias, self.stride, self.padding, self.dilation, self.groups)
                                 scaler = cellRange**k
@@ -106,13 +105,12 @@ class QConv2d(nn.Conv2d):
                                     remainder = torch.fmod(X_decimal, cellRange)*mask
                                     # retention
                                     remainder = wage_quantizer.Retention(remainder,self.t,self.v,self.detect,self.target)
-                                    variation = np.random.normal(0, self.vari, list(weight.size())).astype(np.float32)
                                     X_decimal = torch.round((X_decimal-remainder)/cellRange)*mask
                                     # Now also consider weight has on/off ratio effects
                                     # Here remainder is the weight mapped to Hardware, so we introduce on/off ratio in this value
                                     # the range of remainder is [0, cellRange-1], we truncate it to [lower, upper]
                                     remainderQ = (upper-lower)*(remainder-0)+(cellRange-1)*lower   # weight cannot map to 0, but to Gmin
-                                    remainderQ = remainderQ + remainderQ*torch.from_numpy(variation).cuda()
+                                    remainderQ = remainderQ + remainderQ*torch.normal(0., torch.ones_like(remainderQ)*self.vari).cuda()
                                     outputPartial= F.conv2d(inputB, remainderQ*mask, self.bias, self.stride, self.padding, self.dilation, self.groups)
                                     outputDummyPartial= F.conv2d(inputB, dummyP*mask, self.bias, self.stride, self.padding, self.dilation, self.groups)
                                     # Add ADC quanization effects here !!!
@@ -143,13 +141,12 @@ class QConv2d(nn.Conv2d):
                                     remainder = torch.fmod(X_decimal, cellRange)*mask
                                     # retention
                                     remainder = wage_quantizer.Retention(remainder,self.t,self.v,self.detect,self.target)
-                                    variation = np.random.normal(0, self.vari, list(weight.size())).astype(np.float32)
                                     X_decimal = torch.round((X_decimal-remainder)/cellRange)*mask
                                     # Now also consider weight has on/off ratio effects
                                     # Here remainder is the weight mapped to Hardware, so we introduce on/off ratio in this value
                                     # the range of remainder is [0, cellRange-1], we truncate it to [lower, upper]*(cellRange-1)
                                     remainderQ = (upper-lower)*(remainder-0)+(cellRange-1)*lower   # weight cannot map to 0, but to Gmin
-                                    remainderQ = remainderQ + remainderQ*torch.from_numpy(variation).cuda()
+                                    remainderQ = remainderQ + remainderQ*torch.normal(0., torch.ones_like(remainderQ)*self.vari).cuda()
                                     outputPartial= F.conv2d(inputB, remainderQ*mask, self.bias, self.stride, self.padding, self.dilation, self.groups)
                                     outputDummyPartial= F.conv2d(inputB, dummyP*mask, self.bias, self.stride, self.padding, self.dilation, self.groups)
                                     # Add ADC quanization effects here !!!
@@ -255,13 +252,12 @@ class QLinear(nn.Linear):
                         remainder = torch.fmod(X_decimal, cellRange)*mask
                         # retention
                         remainder = wage_quantizer.Retention(remainder,self.t,self.v,self.detect,self.target)
-                        variation = np.random.normal(0, self.vari, list(weight.size())).astype(np.float32)
                         X_decimal = torch.round((X_decimal-remainder)/cellRange)*mask
                         # Now also consider weight has on/off ratio effects
                         # Here remainder is the weight mapped to Hardware, so we introduce on/off ratio in this value
                         # the range of remainder is [0, cellRange-1], we truncate it to [lower, upper]
                         remainderQ = (upper-lower)*(remainder-0)+(cellRange-1)*lower   # weight cannot map to 0, but to Gmin
-                        remainderQ = remainderQ + remainderQ*torch.from_numpy(variation).cuda()
+                        remainderQ = remainderQ + remainderQ*torch.normal(0., torch.ones_like(remainderQ)*self.vari).cuda()
                         outputPartial= F.linear(inputB, remainderQ*mask, self.bias)
                         outputDummyPartial= F.linear(inputB, dummyP*mask, self.bias)
                         # Add ADC quanization effects here !!!
@@ -291,13 +287,12 @@ class QLinear(nn.Linear):
                             remainder = torch.fmod(X_decimal, cellRange)*mask
                             # retention
                             remainder = wage_quantizer.Retention(remainder,self.t,self.v,self.detect,self.target)
-                            variation = np.random.normal(0, self.vari, list(remainder.size())).astype(np.float32)
                             X_decimal = torch.round((X_decimal-remainder)/cellRange)*mask
                             # Now also consider weight has on/off ratio effects
                             # Here remainder is the weight mapped to Hardware, so we introduce on/off ratio in this value
                             # the range of remainder is [0, cellRange-1], we truncate it to [lower, upper]*(cellRange-1)
                             remainderQ = (upper-lower)*(remainder-0)+(cellRange-1)*lower   # weight cannot map to 0, but to Gmin
-                            remainderQ = remainderQ + remainderQ*torch.from_numpy(variation).cuda()
+                            remainderQ = remainderQ + remainderQ*torch.normal(0., torch.ones_like(remainderQ)*self.vari).cuda()
                             outputPartial= F.linear(inputB, remainderQ*mask, self.bias)
                             outputDummyPartial= F.linear(inputB, dummyP*mask, self.bias)
                             # Add ADC quanization effects here !!!
