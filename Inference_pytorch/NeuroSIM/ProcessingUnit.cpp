@@ -569,6 +569,7 @@ double ProcessingUnitCalculatePerformance(SubArray *subArray, const vector<vecto
 		*coreLatencyOther += (*bufferLatency) + (*icLatency);	
 		*coreEnergyOther += (*bufferDynamicEnergy) + (*icDynamicEnergy);		
 	}
+	return 0;
 }
 
 
