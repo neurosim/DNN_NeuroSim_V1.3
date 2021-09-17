@@ -185,7 +185,8 @@ public:
 	SRAMWriteDriver          sramWriteDriver;
 	DFF                      dff;
 	Adder                    adder;
-	ShiftAdd                 shiftAdd;
+	ShiftAdd                 shiftAddInput;
+	ShiftAdd                 shiftAddWeight;
 	MultilevelSenseAmp       multilevelSenseAmp;
 	MultilevelSAEncoder      multilevelSAEncoder;
 	SarADC                   sarADC;
