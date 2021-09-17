@@ -72,7 +72,8 @@ SubArray::SubArray(InputParameter& _inputParameter, Technology& _tech, MemCell& 
 						sramWriteDriver(_inputParameter, _tech, _cell),
 						adder(_inputParameter, _tech, _cell),
 						dff(_inputParameter, _tech, _cell),
-						shiftAdd(_inputParameter, _tech, _cell),
+						shiftAddInput(_inputParameter, _tech, _cell),
+						shiftAddWeight(_inputParameter, _tech, _cell),
 						multilevelSenseAmp(_inputParameter, _tech, _cell),
 						multilevelSAEncoder(_inputParameter, _tech, _cell),
 						sarADC(_inputParameter, _tech, _cell){
@@ -150,9 +151,13 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 			int numAdder = numCol/numCellPerSynapse;
 			dff.Initialize((adderBit+1)*numAdder, clkFreq);	
 			adder.Initialize(adderBit, numAdder, clkFreq);
-			if (numReadPulse > 1) {
-				shiftAdd.Initialize(numAdder, adderBit+1, clkFreq, spikingMode, numReadPulse);
+			if (numCellPerSynapse > 1) {
+				shiftAddWeight.Initialize(numAdder, adderBit, clkFreq, spikingMode, numCellPerSynapse);
 			}
+			if (numReadPulse > 1) {
+				shiftAddInput.Initialize(numAdder, adderBit+numCellPerSynapse, clkFreq, spikingMode, numReadPulse);
+			}
+			
 		} else if (conventionalParallel) {
 			wlSwitchMatrix.Initialize(ROW_MODE, numRow, resRow, true, false, activityRowRead, activityColWrite, numWriteCellPerOperationMemory, numWriteCellPerOperationNeuro, 1, clkFreq);
 			if (numColMuxed>1) {
@@ -165,9 +170,13 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 				multilevelSenseAmp.Initialize(numCol/numColMuxed, levelOutput, clkFreq, numReadCellPerOperationNeuro, true, currentMode);
 				multilevelSAEncoder.Initialize(levelOutput, numCol/numColMuxed);
 			}
-			if (numReadPulse > 1) {
-				shiftAdd.Initialize(ceil(numCol/numColMuxed), log2(levelOutput)+1, clkFreq, spikingMode, numReadPulse);
+			if (numCellPerSynapse > 1) {
+				shiftAddWeight.Initialize(ceil(numCol/numColMuxed), log2(levelOutput), clkFreq, spikingMode, numCellPerSynapse);
 			}
+			if (numReadPulse > 1) {
+				shiftAddInput.Initialize(ceil(numCol/numColMuxed), log2(levelOutput)+numCellPerSynapse, clkFreq, spikingMode, numReadPulse);
+			}
+			
 		} else if (BNNsequentialMode || XNORsequentialMode) {
 			wlDecoder.Initialize(REGULAR_ROW, (int)ceil(log2(numRow)), false, false);
 			senseAmp.Initialize(numCol, false, cell.minSenseVoltage, lengthRow/numCol, clkFreq, numReadCellPerOperationNeuro);
@@ -248,9 +257,13 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 			
 			dff.Initialize((adderBit+1)*numAdder, clkFreq); 
 			adder.Initialize(adderBit, numAdder, clkFreq);
-			if (numReadPulse > 1) {
-				shiftAdd.Initialize(numAdder, adderBit+1, clkFreq, spikingMode, numReadPulse);
+			if (numCellPerSynapse > 1) {
+				shiftAddWeight.Initialize(numAdder, adderBit, clkFreq, spikingMode, numCellPerSynapse);
 			}
+			if (numReadPulse > 1) {
+				shiftAddInput.Initialize(numAdder, adderBit+numCellPerSynapse, clkFreq, spikingMode, numReadPulse);
+			}
+			
 		} else if (conventionalParallel) { 
 		
 			// double resTg = cell.resMemCellOn / numRow;
@@ -272,10 +285,12 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 				multilevelSenseAmp.Initialize(numCol/numColMuxed, levelOutput, clkFreq, numReadCellPerOperationNeuro, true, currentMode);
 				multilevelSAEncoder.Initialize(levelOutput, numCol/numColMuxed);
 			}
-			
-			if (numReadPulse > 1) {
-				shiftAdd.Initialize(ceil(numCol/numColMuxed), log2(levelOutput)+1, clkFreq, spikingMode, numReadPulse);
+			if (numCellPerSynapse > 1) {
+				shiftAddWeight.Initialize(ceil(numCol/numColMuxed), log2(levelOutput), clkFreq, spikingMode, numCellPerSynapse);
 			}
+			if (numReadPulse > 1) {
+				shiftAddInput.Initialize(ceil(numCol/numColMuxed), log2(levelOutput)+numCellPerSynapse, clkFreq, spikingMode, numReadPulse);
+			}			
 			
 		} else if (BNNsequentialMode || XNORsequentialMode) {       
 			double resTg = cell.resMemCellOn;
@@ -346,16 +361,19 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				adder.CalculateArea(NULL, widthArray, NONE);
 				dff.CalculateArea(NULL, widthArray, NONE);
 				if (numReadPulse > 1) {
-					shiftAdd.CalculateArea(NULL, widthArray, NONE);
+					shiftAddInput.CalculateArea(NULL, widthArray, NONE);
 				}
-				height = precharger.height + sramWriteDriver.height + heightArray + senseAmp.height + adder.height + dff.height + shiftAdd.height;
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculateArea(NULL, widthArray, NONE);
+				}
+				height = precharger.height + sramWriteDriver.height + heightArray + senseAmp.height + adder.height + dff.height + shiftAddInput.height + shiftAddWeight.width;
 				width = wlDecoder.width + widthArray;
 				area = height * width;
-				usedArea = areaArray + wlDecoder.area + precharger.area + sramWriteDriver.area + senseAmp.area + adder.area + dff.area + shiftAdd.area;
+				usedArea = areaArray + wlDecoder.area + precharger.area + sramWriteDriver.area + senseAmp.area + adder.area + dff.area + shiftAddInput.area + shiftAddWeight.area;
 				emptyArea = area - usedArea;
 				
 				areaADC = senseAmp.area + precharger.area;
-				areaAccum = adder.area + dff.area + shiftAdd.area;
+				areaAccum = adder.area + dff.area + shiftAddInput.area + shiftAddWeight.area;
 				areaOther = wlDecoder.area + sramWriteDriver.area;
 			} else if (conventionalParallel) { 
 				wlSwitchMatrix.CalculateArea(heightArray, NULL, NONE);
@@ -373,26 +391,29 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 					multilevelSAEncoder.CalculateArea(NULL, widthArray, NONE);
 				}
 				if (numReadPulse > 1) {
-					shiftAdd.CalculateArea(NULL, widthArray, NONE);
+					shiftAddInput.CalculateArea(NULL, widthArray, NONE);
 				}
-				height = precharger.height + sramWriteDriver.height + heightArray + multilevelSenseAmp.height + multilevelSAEncoder.height + shiftAdd.height + ((numColMuxed > 1)==true? (mux.height):0)+sarADC.height;
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculateArea(NULL, widthArray, NONE);
+				}
+				height = precharger.height + sramWriteDriver.height + heightArray + multilevelSenseAmp.height + multilevelSAEncoder.height + shiftAddInput.height + shiftAddWeight.width + ((numColMuxed > 1)==true? (mux.height):0)+sarADC.height;
 				width = MAX(wlSwitchMatrix.width, ((numColMuxed > 1)==true? (muxDecoder.width):0)) + widthArray;
 				area = height * width;
-				usedArea = areaArray + wlSwitchMatrix.area + precharger.area + sramWriteDriver.area + multilevelSenseAmp.area + multilevelSAEncoder.area + shiftAdd.area + ((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0)+sarADC.area;
+				usedArea = areaArray + wlSwitchMatrix.area + precharger.area + sramWriteDriver.area + multilevelSenseAmp.area + multilevelSAEncoder.area + shiftAddInput.area + shiftAddWeight.area + ((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0)+sarADC.area;
 				emptyArea = area - usedArea;
 
 				areaADC = multilevelSenseAmp.area + precharger.area + multilevelSAEncoder.area + sarADC.area;
-				areaAccum = shiftAdd.area;
+				areaAccum = shiftAddInput.area + shiftAddWeight.area;
 				areaOther = wlSwitchMatrix.area + sramWriteDriver.area + ((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0);
 			} else if (BNNsequentialMode || XNORsequentialMode) {
 				wlDecoder.CalculateArea(heightArray, NULL, NONE);  
 				senseAmp.CalculateArea(NULL, widthArray, MAGIC);
 				adder.CalculateArea(NULL, widthArray, NONE);
 				dff.CalculateArea(NULL, widthArray, NONE);
-				height = precharger.height + sramWriteDriver.height + heightArray + senseAmp.height + adder.height + dff.height + shiftAdd.height;
+				height = precharger.height + sramWriteDriver.height + heightArray + senseAmp.height + adder.height + dff.height;
 				width = wlDecoder.width + widthArray;
 				area = height * width;
-				usedArea = areaArray + wlDecoder.area + precharger.area + sramWriteDriver.area + senseAmp.area + adder.area + dff.area + shiftAdd.area;
+				usedArea = areaArray + wlDecoder.area + precharger.area + sramWriteDriver.area + senseAmp.area + adder.area + dff.area;
 				emptyArea = area - usedArea;
 			} else if (BNNparallelMode || XNORparallelMode) {
 				wlSwitchMatrix.CalculateArea(heightArray, NULL, NONE);
@@ -450,17 +471,20 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				dff.CalculateArea(NULL, widthArray, NONE);
 				adder.CalculateArea(NULL, widthArray, NONE);
 				if (numReadPulse > 1) {
-					shiftAdd.CalculateArea(NULL, widthArray, NONE);
+					shiftAddInput.CalculateArea(NULL, widthArray, NONE);
 				}
-				height = ((cell.writeVoltage > 1.5)==true? (sllevelshifter.height):0) + slSwitchMatrix.height + heightArray + ((numColMuxed > 1)==true? (mux.height):0) + multilevelSenseAmp.height + multilevelSAEncoder.height + adder.height + dff.height + shiftAdd.height + sarADC.height;
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculateArea(NULL, widthArray, NONE);
+				}
+				height = ((cell.writeVoltage > 1.5)==true? (sllevelshifter.height):0) + slSwitchMatrix.height + heightArray + ((numColMuxed > 1)==true? (mux.height):0) + multilevelSenseAmp.height + multilevelSAEncoder.height + adder.height + dff.height + shiftAddInput.height + shiftAddWeight.width + sarADC.height;
 				width = MAX( ((cell.writeVoltage > 1.5)==true? (wllevelshifter.width + bllevelshifter.width):0) + wlDecoder.width + wlNewDecoderDriver.width + wlDecoderDriver.width, ((numColMuxed > 1)==true? (muxDecoder.width):0) ) + widthArray;
 				area = height * width;
 				usedArea = areaArray + ((cell.writeVoltage > 1.5)==true? (wllevelshifter.area + bllevelshifter.area + sllevelshifter.area):0) + wlDecoder.area + wlDecoderDriver.area + wlNewDecoderDriver.area + slSwitchMatrix.area + 
-							((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0) + multilevelSenseAmp.area + multilevelSAEncoder.area + adder.area + dff.area + shiftAdd.area + sarADC.area;
+							((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0) + multilevelSenseAmp.area + multilevelSAEncoder.area + adder.area + dff.area + shiftAddInput.area + shiftAddWeight.area + sarADC.area;
 				emptyArea = area - usedArea;
 				
 				areaADC = multilevelSenseAmp.area + multilevelSAEncoder.area + sarADC.area;
-				areaAccum = adder.area + dff.area + shiftAdd.area;
+				areaAccum = adder.area + dff.area + shiftAddInput.area + shiftAddWeight.area;
 				areaOther = ((cell.writeVoltage > 1.5)==true? (wllevelshifter.area + bllevelshifter.area + sllevelshifter.area):0) + wlDecoder.area + wlNewDecoderDriver.area + wlDecoderDriver.area + slSwitchMatrix.area + ((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0);
 			} else if (conventionalParallel) { 
 				if (cell.accessType == CMOS_access) {
@@ -483,15 +507,18 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 					multilevelSAEncoder.CalculateArea(NULL, widthArray, NONE);
 				}
 				if (numReadPulse > 1) {
-					shiftAdd.CalculateArea(NULL, widthArray, NONE);
+					shiftAddInput.CalculateArea(NULL, widthArray, NONE);
 				}
-				height = ((cell.writeVoltage > 1.5)==true? (sllevelshifter.height):0) + slSwitchMatrix.height + heightArray + ((numColMuxed > 1)==true? (mux.height):0) + multilevelSenseAmp.height + multilevelSAEncoder.height + shiftAdd.height + sarADC.height;
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculateArea(NULL, widthArray, NONE);
+				}
+				height = ((cell.writeVoltage > 1.5)==true? (sllevelshifter.height):0) + slSwitchMatrix.height + heightArray + ((numColMuxed > 1)==true? (mux.height):0) + multilevelSenseAmp.height + multilevelSAEncoder.height + shiftAddWeight.height + shiftAddInput.height + sarADC.height;
 				width = MAX( ((cell.writeVoltage > 1.5)==true? (wllevelshifter.width + bllevelshifter.width):0) + wlNewSwitchMatrix.width + wlSwitchMatrix.width, ((numColMuxed > 1)==true? (muxDecoder.width):0)) + widthArray;
 				usedArea = areaArray + ((cell.writeVoltage > 1.5)==true? (wllevelshifter.area + bllevelshifter.area + sllevelshifter.area):0) + wlSwitchMatrix.area + wlNewSwitchMatrix.area + slSwitchMatrix.area + 
-							((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0) + multilevelSenseAmp.area  + multilevelSAEncoder.area + shiftAdd.area + sarADC.area;
+							((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0) + multilevelSenseAmp.area  + multilevelSAEncoder.area + shiftAddWeight.area + shiftAddInput.area + sarADC.area;
 				
 				areaADC = multilevelSenseAmp.area + multilevelSAEncoder.area + sarADC.area;
-				areaAccum = shiftAdd.area;
+				areaAccum = shiftAddWeight.area + shiftAddInput.area;
 				areaOther = ((cell.writeVoltage > 1.5)==true? (wllevelshifter.area + bllevelshifter.area + sllevelshifter.area):0) + wlNewSwitchMatrix.area + wlSwitchMatrix.area + slSwitchMatrix.area + ((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0);
 				
 				area = height * width;				
@@ -594,16 +621,18 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 				if (!CalculateclkFreq) {
 					adder.CalculateLatency(1e20, dff.capTgDrain, numReadOperationPerRow*numRow*activityRowRead);
 					dff.CalculateLatency(1e20, numReadOperationPerRow*numRow*activityRowRead);
-					if (numReadPulse > 1) {
-						shiftAdd.CalculateLatency(1);	
+					if (numCellPerSynapse > 1) {
+						shiftAddWeight.CalculateLatency(numCellPerSynapse);	
 					}
-					
+					if (numReadPulse > 1) {
+						shiftAddInput.CalculateLatency(1);					
+					}					
 					if (param->synchronous) {
 						readLatencyADC = numReadOperationPerRow*numRow*activityRowRead;
-						readLatencyAccum = adder.readLatency + shiftAdd.readLatency;
+						readLatencyAccum = adder.readLatency + shiftAddInput.readLatency + shiftAddWeight.readLatency;
 					} else {
 						readLatencyADC = (precharger.readLatency + colDelay + senseAmp.readLatency) * numReadOperationPerRow*numRow*activityRowRead * (validated==true? param->beta : 1);;
-						readLatencyAccum = adder.readLatency + dff.readLatency + shiftAdd.readLatency;
+						readLatencyAccum = adder.readLatency + dff.readLatency + shiftAddInput.readLatency + shiftAddWeight.readLatency;
 						readLatencyOther = wlDecoder.readLatency * numRow*activityRowRead * (validated==true? param->beta : 1);;
 					}
 					readLatency = readLatencyADC + readLatencyAccum + readLatencyOther;
@@ -656,16 +685,19 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 					}
 				}
 				if (!CalculateclkFreq) {
+					if (numCellPerSynapse > 1) {
+						shiftAddWeight.CalculateLatency(numColMuxed);	
+					}
 					if (numReadPulse > 1) {
-						shiftAdd.CalculateLatency(numColMuxed);	
-					}
+						shiftAddInput.CalculateLatency(ceil(numColMuxed/numCellPerSynapse));		
+					}					
 					if (param->synchronous) {
-						readLatencyADC = numColMuxed;
+						readLatencyADC = numColMuxed;						
 					} else {
-						readLatencyADC = (precharger.readLatency + colDelay + multilevelSenseAmp.readLatency + multilevelSAEncoder.readLatency + sarADC.readLatency) * numColMuxed * (validated==true? param->beta : 1);;
-						readLatencyOther = MAX(wlSwitchMatrix.readLatency, ((numColMuxed > 1)==true? (mux.readLatency+muxDecoder.readLatency):0) ) * numColMuxed * (validated==true? param->beta : 1);;
+						readLatencyADC = (precharger.readLatency + colDelay + multilevelSenseAmp.readLatency + multilevelSAEncoder.readLatency + sarADC.readLatency) * numColMuxed * (validated==true? param->beta : 1);
+						readLatencyOther = MAX(wlSwitchMatrix.readLatency, ((numColMuxed > 1)==true? (mux.readLatency+muxDecoder.readLatency):0) ) * numColMuxed * (validated==true? param->beta : 1);
 					}
-					readLatencyAccum = shiftAdd.readLatency;
+					readLatencyAccum = shiftAddWeight.readLatency + shiftAddInput.readLatency;
 					readLatency = readLatencyADC + readLatencyAccum + readLatencyOther;
 				}
 			} else if (BNNsequentialMode || XNORsequentialMode) {
@@ -791,15 +823,18 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 				if (!CalculateclkFreq) {
 					adder.CalculateLatency(1e20, dff.capTgDrain, numColMuxed*numRow*activityRowRead);
 					dff.CalculateLatency(1e20, numColMuxed*numRow*activityRowRead);
+					if (numCellPerSynapse > 1) {
+						shiftAddWeight.CalculateLatency(numColMuxed);							// There are numReadPulse times of shift-and-add
+					}
 					if (numReadPulse > 1) {
-						shiftAdd.CalculateLatency(numColMuxed);	// There are numReadPulse times of shift-and-add
+						shiftAddInput.CalculateLatency(ceil(numColMuxed/numCellPerSynapse));	// There are numReadPulse times of shift-and-add
 					}
 					if (param->synchronous) {
 						readLatencyADC = numRow*activityRowRead*numColMuxed;
-						readLatencyAccum = adder.readLatency + shiftAdd.readLatency;
+						readLatencyAccum = adder.readLatency + shiftAddWeight.readLatency + shiftAddInput.readLatency;
 					} else {
 						readLatencyADC = (multilevelSenseAmp.readLatency + multilevelSAEncoder.readLatency + sarADC.readLatency + colDelay) * (numRow*activityRowRead*numColMuxed) * (validated==true? param->beta : 1);
-						readLatencyAccum = adder.readLatency + dff.readLatency + shiftAdd.readLatency;	
+						readLatencyAccum = adder.readLatency + dff.readLatency + shiftAddWeight.readLatency + shiftAddInput.readLatency;	
 						readLatencyOther = MAX((wlDecoder.readLatency + wlNewDecoderDriver.readLatency + wlDecoderDriver.readLatency)*numRow*activityRowRead, ((numColMuxed > 1)==true? (mux.readLatency+muxDecoder.readLatency):0)) * numColMuxed * (validated==true? param->beta : 1);
 					}
 					readLatency = readLatencyADC + readLatencyAccum + readLatencyOther;
@@ -846,8 +881,11 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 					}
 				}
 				if (!CalculateclkFreq) {
+					if (numCellPerSynapse > 1) {
+						shiftAddWeight.CalculateLatency(numColMuxed);	
+					}
 					if (numReadPulse > 1) {
-						shiftAdd.CalculateLatency(numColMuxed);	
+						shiftAddInput.CalculateLatency(ceil(numColMuxed/numCellPerSynapse));		
 					}
 					if (param->synchronous) {
 						readLatencyADC = numColMuxed;
@@ -855,7 +893,7 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 						readLatencyADC = (multilevelSenseAmp.readLatency + multilevelSAEncoder.readLatency + sarADC.readLatency + colDelay) * numColMuxed * (validated==true? param->beta : 1);
 						readLatencyOther = MAX(wlNewSwitchMatrix.readLatency + wlSwitchMatrix.readLatency, ((numColMuxed > 1)==true? (mux.readLatency+muxDecoder.readLatency):0)) * numColMuxed * (validated==true? param->beta : 1);
 					}
-					readLatencyAccum = shiftAdd.readLatency;
+					readLatencyAccum = shiftAddWeight.readLatency + shiftAddInput.readLatency;
 					readLatency = readLatencyADC + readLatencyAccum + readLatencyOther;
 				}
 			} else if (BNNsequentialMode || XNORsequentialMode) {
@@ -978,9 +1016,13 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				adder.CalculatePower(numReadOperationPerRow*numRow*activityRowRead, numReadCellPerOperationNeuro/numCellPerSynapse);				
 				dff.CalculatePower(numReadOperationPerRow*numRow*activityRowRead, numReadCellPerOperationNeuro/numCellPerSynapse*(adder.numBit+1), param->validated);
 				senseAmp.CalculatePower(numReadOperationPerRow*numRow*activityRowRead);
-				if (numReadPulse > 1) {
-					shiftAdd.CalculatePower(numReadOperationPerRow*numRow*activityRowRead);
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculatePower(numCellPerSynapse);	
 				}
+				if (numReadPulse > 1) {
+					shiftAddInput.CalculatePower(1);					
+				}
+
 				// Array
 				readDynamicEnergyArray = 0; // Just BL discharging
 				writeDynamicEnergyArray = cell.capSRAMCell * tech.vdd * tech.vdd * 2 * numCol * activityColWrite * numRow * activityRowWrite;    // flip Q and Q_bar
@@ -992,10 +1034,10 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += adder.readDynamicEnergy;
 				readDynamicEnergy += dff.readDynamicEnergy;
 				readDynamicEnergy += senseAmp.readDynamicEnergy;
-				readDynamicEnergy += shiftAdd.readDynamicEnergy;
+				readDynamicEnergy += shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				
 				readDynamicEnergyADC = precharger.readDynamicEnergy + readDynamicEnergyArray + senseAmp.readDynamicEnergy;
-				readDynamicEnergyAccum = adder.readDynamicEnergy + dff.readDynamicEnergy + shiftAdd.readDynamicEnergy;
+				readDynamicEnergyAccum = adder.readDynamicEnergy + dff.readDynamicEnergy + shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				readDynamicEnergyOther = wlDecoder.readDynamicEnergy;
 
 				// Write
@@ -1011,7 +1053,7 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				leakage += senseAmp.leakage;
 				leakage += dff.leakage;
 				leakage += adder.leakage;
-				leakage += shiftAdd.leakage;
+				leakage += shiftAddWeight.leakage + shiftAddInput.leakage;
 
 			} else if (conventionalParallel) {
 				wlSwitchMatrix.CalculatePower(numColMuxed, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead, activityColWrite);
@@ -1027,8 +1069,11 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 					multilevelSenseAmp.CalculatePower(columnResistance, 1);
 					multilevelSAEncoder.CalculatePower(numColMuxed);
 				}
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculatePower(numColMuxed);	
+				}
 				if (numReadPulse > 1) {
-					shiftAdd.CalculatePower(numColMuxed);
+					shiftAddInput.CalculatePower(ceil(numColMuxed/numCellPerSynapse));		
 				}
 				// Array
 				readDynamicEnergyArray = 0; // Just BL discharging
@@ -1041,11 +1086,11 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += multilevelSAEncoder.readDynamicEnergy;
 				readDynamicEnergy += ((numColMuxed > 1)==true? (mux.readDynamicEnergy/numReadPulse):0);
 				readDynamicEnergy += ((numColMuxed > 1)==true? (muxDecoder.readDynamicEnergy/numReadPulse):0);
-				readDynamicEnergy += shiftAdd.readDynamicEnergy;
+				readDynamicEnergy += shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				readDynamicEnergy += sarADC.readDynamicEnergy;
 
 				readDynamicEnergyADC = precharger.readDynamicEnergy + readDynamicEnergyArray + multilevelSenseAmp.readDynamicEnergy + multilevelSAEncoder.readDynamicEnergy + sarADC.readDynamicEnergy;				
-				readDynamicEnergyAccum = shiftAdd.readDynamicEnergy;
+				readDynamicEnergyAccum = shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				readDynamicEnergyOther = wlSwitchMatrix.readDynamicEnergy + ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 				
 				// Write
@@ -1060,7 +1105,7 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				leakage += sramWriteDriver.leakage;
 				leakage += multilevelSenseAmp.leakage;
 				leakage += multilevelSAEncoder.leakage;
-				leakage += shiftAdd.leakage;
+				leakage += shiftAddWeight.leakage + shiftAddInput.leakage;
 			
 			} else if (BNNsequentialMode || XNORsequentialMode) {
 				wlDecoder.CalculatePower(numRow*activityRowRead, numRow*activityRowWrite);
@@ -1160,8 +1205,11 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				}
 				adder.CalculatePower(numColMuxed*numRow*activityRowRead, numReadCells);
 				dff.CalculatePower(numColMuxed*numRow*activityRowRead, numReadCells*(adder.numBit+1), param->validated); 
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculatePower(numColMuxed);	
+				}
 				if (numReadPulse > 1) {
-					shiftAdd.CalculatePower(numColMuxed);	// There are numReadPulse times of shift-and-add
+					shiftAddInput.CalculatePower(ceil(numColMuxed/numCellPerSynapse));		
 				}
 				// Read
 				readDynamicEnergyArray = 0;
@@ -1176,13 +1224,13 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 				readDynamicEnergy += adder.readDynamicEnergy;
 				readDynamicEnergy += dff.readDynamicEnergy;
-				readDynamicEnergy += shiftAdd.readDynamicEnergy;
+				readDynamicEnergy += shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				readDynamicEnergy += readDynamicEnergyArray;
 				readDynamicEnergy += multilevelSenseAmp.readDynamicEnergy + multilevelSAEncoder.readDynamicEnergy;
 				readDynamicEnergy += sarADC.readDynamicEnergy;
 				
 				readDynamicEnergyADC = readDynamicEnergyArray + multilevelSenseAmp.readDynamicEnergy + multilevelSAEncoder.readDynamicEnergy + sarADC.readDynamicEnergy;
-				readDynamicEnergyAccum = adder.readDynamicEnergy + dff.readDynamicEnergy + shiftAdd.readDynamicEnergy;
+				readDynamicEnergyAccum = adder.readDynamicEnergy + dff.readDynamicEnergy + shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				readDynamicEnergyOther = wlDecoder.readDynamicEnergy + wlNewDecoderDriver.readDynamicEnergy + wlDecoderDriver.readDynamicEnergy + ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 
 				// Write					
@@ -1212,7 +1260,7 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				leakage += multilevelSAEncoder.leakage;
 				leakage += dff.leakage;
 				leakage += adder.leakage;
-				leakage += shiftAdd.leakage;
+				leakage += shiftAddWeight.leakage + shiftAddInput.leakage;
 					
 			} else if (conventionalParallel) {
 				double numReadCells = (int)ceil((double)numCol/numColMuxed);    // similar parameter as numReadCellPerOperationNeuro, which is for SRAM
@@ -1235,8 +1283,11 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 					multilevelSenseAmp.CalculatePower(columnResistance, 1);
 					multilevelSAEncoder.CalculatePower(numColMuxed);
 				}
+				if (numCellPerSynapse > 1) {
+					shiftAddWeight.CalculatePower(numColMuxed);	
+				}
 				if (numReadPulse > 1) {
-					shiftAdd.CalculatePower(numColMuxed);
+					shiftAddInput.CalculatePower(ceil(numColMuxed/numCellPerSynapse));		
 				}
 				// Read
 				readDynamicEnergyArray = 0;
@@ -1250,12 +1301,12 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 				readDynamicEnergy += multilevelSenseAmp.readDynamicEnergy;
 				readDynamicEnergy += multilevelSAEncoder.readDynamicEnergy;
-				readDynamicEnergy += shiftAdd.readDynamicEnergy;
+				readDynamicEnergy += shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				readDynamicEnergy += readDynamicEnergyArray;
 				readDynamicEnergy += sarADC.readDynamicEnergy;
 				
 				readDynamicEnergyADC = readDynamicEnergyArray + multilevelSenseAmp.readDynamicEnergy + multilevelSAEncoder.readDynamicEnergy + sarADC.readDynamicEnergy;
-				readDynamicEnergyAccum = shiftAdd.readDynamicEnergy;
+				readDynamicEnergyAccum = shiftAddWeight.readDynamicEnergy + shiftAddInput.readDynamicEnergy;
 				readDynamicEnergyOther = wlNewSwitchMatrix.readDynamicEnergy + wlSwitchMatrix.readDynamicEnergy + ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 				
 				// Write				
@@ -1281,7 +1332,7 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				leakage += ((numColMuxed > 1)==true? (muxDecoder.leakage):0);
 				leakage += multilevelSenseAmp.leakage;
 				leakage += multilevelSAEncoder.leakage;
-				leakage += shiftAdd.leakage;
+				leakage += shiftAddWeight.leakage + shiftAddInput.leakage;
 				
 			} else if (BNNsequentialMode || XNORsequentialMode) {
 				double numReadCells = (int)ceil((double)numCol/numColMuxed);    // similar parameter as numReadCellPerOperationNeuro, which is for SRAM
@@ -1432,14 +1483,16 @@ void SubArray::PrintProperty() {
 			dff.PrintProperty("dff"); 
 			adder.PrintProperty("adder");
 			if (numReadPulse > 1) {
-				shiftAdd.PrintProperty("shiftAdd");
+				shiftAddWeight.PrintProperty("shiftAddWeight");
+				shiftAddInput.PrintProperty("shiftAddInput");
 			}
 		} else if (conventionalParallel) {
 			wlSwitchMatrix.PrintProperty("wlSwitchMatrix");
 			multilevelSenseAmp.PrintProperty("multilevelSenseAmp");
 			multilevelSAEncoder.PrintProperty("multilevelSAEncoder");
 			if (numReadPulse > 1) {
-				shiftAdd.PrintProperty("shiftAdd");
+				shiftAddWeight.PrintProperty("shiftAddWeight");
+				shiftAddInput.PrintProperty("shiftAddInput");
 			}
 		} else if (BNNsequentialMode || XNORsequentialMode) {
 			wlDecoder.PrintProperty("wlDecoder");			
@@ -1455,7 +1508,8 @@ void SubArray::PrintProperty() {
 			multilevelSenseAmp.PrintProperty("multilevelSenseAmp");
 			multilevelSAEncoder.PrintProperty("multilevelSAEncoder");
 			if (numReadPulse > 1) {
-				shiftAdd.PrintProperty("shiftAdd");
+				shiftAddWeight.PrintProperty("shiftAddWeight");
+				shiftAddInput.PrintProperty("shiftAddInput");
 			}
 		}
 		
@@ -1483,7 +1537,8 @@ void SubArray::PrintProperty() {
 			adder.PrintProperty("adder");
 			dff.PrintProperty("dff");
 			if (numReadPulse > 1) {
-				shiftAdd.PrintProperty("shiftAdd");
+				shiftAddWeight.PrintProperty("shiftAddWeight");
+				shiftAddInput.PrintProperty("shiftAddInput");
 			}
 		} else if (conventionalParallel) {
 			if (cell.accessType == CMOS_access) {
@@ -1497,7 +1552,8 @@ void SubArray::PrintProperty() {
 			multilevelSenseAmp.PrintProperty("multilevelSenseAmp");
 			multilevelSAEncoder.PrintProperty("multilevelSAEncoder");
 			if (numReadPulse > 1) {
-				shiftAdd.PrintProperty("shiftAdd");
+				shiftAddWeight.PrintProperty("shiftAddWeight");
+				shiftAddInput.PrintProperty("shiftAddInput");
 			}
 		} else if (BNNsequentialMode || XNORsequentialMode) {
 			wlDecoder.PrintProperty("wlDecoder");
@@ -1535,7 +1591,8 @@ void SubArray::PrintProperty() {
 			multilevelSenseAmp.PrintProperty("multilevelSenseAmp");
 			multilevelSAEncoder.PrintProperty("multilevelSAEncoder");
 			if (numReadPulse > 1) {
-				shiftAdd.PrintProperty("shiftAdd");
+				shiftAddWeight.PrintProperty("shiftAddWeight");
+				shiftAddInput.PrintProperty("shiftAddInput");
 			}
 		}
 	} 
