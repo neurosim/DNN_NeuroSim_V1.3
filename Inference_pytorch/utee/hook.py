@@ -24,7 +24,9 @@ def Neural_Sim(self, input, output):
     write_matrix_weight( weight_q.cpu().data.numpy(),weight_file_name)
     if len(self.weight.shape) > 2:
         k=self.weight.shape[-1]
-        write_matrix_activation_conv(stretch_input(input[0].cpu().data.numpy(),k),None,self.wl_input,input_file_name)
+        padding = self.padding
+        stride = self.stride  
+        write_matrix_activation_conv(stretch_input(input[0].cpu().data.numpy(),k,padding,stride),None,self.wl_input,input_file_name)
     else:
         write_matrix_activation_fc(input[0].cpu().data.numpy(),None ,self.wl_input, input_file_name)
 
@@ -51,10 +53,10 @@ def write_matrix_activation_fc(input_matrix,fill_dimension,length,filename):
     np.savetxt(filename, filled_matrix_b, delimiter=",",fmt='%s')
 
 
-def stretch_input(input_matrix,window_size = 5):
+def stretch_input(input_matrix,window_size = 5,padding=(0,0),stride=(1,1)):
     input_shape = input_matrix.shape
-    item_num = (input_shape[2] - window_size + 1) * (input_shape[3]-window_size + 1)
-    output_matrix = np.zeros((input_shape[0],item_num,input_shape[1]*window_size*window_size))
+    item_num = (input_shape[2] + 2*padding[0] - window_size + 1) / stride[0] * (input_shape[3] + 2*padding[1] - window_size + 1) / stride[1]
+    output_matrix = np.zeros((input_shape[0],int(item_num),input_shape[1]*window_size*window_size))
     iter = 0
     for i in range( input_shape[2]-window_size + 1 ):
         for j in range( input_shape[3]-window_size + 1 ):
