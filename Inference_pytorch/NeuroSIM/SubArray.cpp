@@ -366,7 +366,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				if (numCellPerSynapse > 1) {
 					shiftAddWeight.CalculateArea(NULL, widthArray, NONE);
 				}
-				height = precharger.height + sramWriteDriver.height + heightArray + senseAmp.height + adder.height + dff.height + shiftAddInput.height + shiftAddWeight.width;
+				height = precharger.height + sramWriteDriver.height + heightArray + senseAmp.height + adder.height + dff.height + shiftAddInput.height + shiftAddWeight.height;
 				width = wlDecoder.width + widthArray;
 				area = height * width;
 				usedArea = areaArray + wlDecoder.area + precharger.area + sramWriteDriver.area + senseAmp.area + adder.area + dff.area + shiftAddInput.area + shiftAddWeight.area;
@@ -396,7 +396,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				if (numCellPerSynapse > 1) {
 					shiftAddWeight.CalculateArea(NULL, widthArray, NONE);
 				}
-				height = precharger.height + sramWriteDriver.height + heightArray + multilevelSenseAmp.height + multilevelSAEncoder.height + shiftAddInput.height + shiftAddWeight.width + ((numColMuxed > 1)==true? (mux.height):0)+sarADC.height;
+				height = precharger.height + sramWriteDriver.height + heightArray + multilevelSenseAmp.height + multilevelSAEncoder.height + shiftAddInput.height + shiftAddWeight.height + ((numColMuxed > 1)==true? (mux.height):0)+sarADC.height;
 				width = MAX(wlSwitchMatrix.width, ((numColMuxed > 1)==true? (muxDecoder.width):0)) + widthArray;
 				area = height * width;
 				usedArea = areaArray + wlSwitchMatrix.area + precharger.area + sramWriteDriver.area + multilevelSenseAmp.area + multilevelSAEncoder.area + shiftAddInput.area + shiftAddWeight.area + ((numColMuxed > 1)==true? (mux.area + muxDecoder.area):0)+sarADC.area;
@@ -476,7 +476,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				if (numCellPerSynapse > 1) {
 					shiftAddWeight.CalculateArea(NULL, widthArray, NONE);
 				}
-				height = ((cell.writeVoltage > 1.5)==true? (sllevelshifter.height):0) + slSwitchMatrix.height + heightArray + ((numColMuxed > 1)==true? (mux.height):0) + multilevelSenseAmp.height + multilevelSAEncoder.height + adder.height + dff.height + shiftAddInput.height + shiftAddWeight.width + sarADC.height;
+				height = ((cell.writeVoltage > 1.5)==true? (sllevelshifter.height):0) + slSwitchMatrix.height + heightArray + ((numColMuxed > 1)==true? (mux.height):0) + multilevelSenseAmp.height + multilevelSAEncoder.height + adder.height + dff.height + shiftAddInput.height + shiftAddWeight.height + sarADC.height;
 				width = MAX( ((cell.writeVoltage > 1.5)==true? (wllevelshifter.width + bllevelshifter.width):0) + wlDecoder.width + wlNewDecoderDriver.width + wlDecoderDriver.width, ((numColMuxed > 1)==true? (muxDecoder.width):0) ) + widthArray;
 				area = height * width;
 				usedArea = areaArray + ((cell.writeVoltage > 1.5)==true? (wllevelshifter.area + bllevelshifter.area + sllevelshifter.area):0) + wlDecoder.area + wlDecoderDriver.area + wlNewDecoderDriver.area + slSwitchMatrix.area + 
