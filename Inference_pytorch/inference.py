@@ -40,7 +40,7 @@ parser.add_argument('--ADCprecision', type=int, default=5, help='ADC precision (
 parser.add_argument('--cellBit', type=int, default=4, help='cell precision (e.g. 4-bit/cell)')
 parser.add_argument('--onoffratio', type=float, default=10, help='device on/off ratio (e.g. Gmax/Gmin = 3)')
 # if do not run the device retention / conductance variation effects, set vari=0, v=0
-parser.add_argument('--vari', type=float, default=0, help='conductance variation (e.g. 0.1 standard deviation to generate random variation)')
+parser.add_argument('--vari', type=float, default=0., help='conductance variation (e.g. 0.1 standard deviation to generate random variation)')
 parser.add_argument('--t', type=float, default=0, help='retention time')
 parser.add_argument('--v', type=float, default=0, help='drift coefficient')
 parser.add_argument('--detect', type=int, default=0, help='if 1, fixed-direction drift, if 0, random drift')
