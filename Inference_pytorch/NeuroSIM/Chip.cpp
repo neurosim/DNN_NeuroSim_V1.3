@@ -398,7 +398,7 @@ void ChipInitialize(InputParameter& inputParameter, Technology& tech, MemCell& c
 	int bufferSize = param->numBitInput*maxLayerInput;										 
 	
 	//globalBuffer->Initialize(param->numBitInput*maxLayerInput, globalBusWidth, 1, param->unitLengthWireResistance, param->clkFreq, param->globalBufferType);
-	numBufferCore = ceil(bufferSize/(param->globalBufferCoreSizeRow*param->globalBufferCoreSizeCol));
+	numBufferCore = ceil((double) bufferSize/((double) param->globalBufferCoreSizeRow*(double) param->globalBufferCoreSizeCol));
 	//numBufferCore = ceil(1.5*numBufferCore);
 	globalBuffer->Initialize((param->globalBufferCoreSizeRow*param->globalBufferCoreSizeCol), param->globalBufferCoreSizeCol, 1, param->unitLengthWireResistance, param->clkFreq, param->globalBufferType);
 	
