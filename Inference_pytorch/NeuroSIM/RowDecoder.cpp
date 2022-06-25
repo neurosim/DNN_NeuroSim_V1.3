@@ -175,7 +175,9 @@ void RowDecoder::CalculateArea(double _newHeight, double _newWidth, AreaModify _
 				if (numInvPerCol > numInv) {
 					numInvPerCol = numInv;
 				}
-				numColInv = (int)ceil((double)numInv/numInvPerCol);
+				if (numInvPerCol > 0) {	// Prevent division by 0
+					numColInv = (int)ceil((double)numInv/numInvPerCol);
+				}
 				
 				height = _newHeight;
 				width = wInv * numColInv + wNand * numColNand + M3_PITCH * numMetalConnection * tech.featureSize + wNor * numColNor;
