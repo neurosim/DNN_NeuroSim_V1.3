@@ -55,13 +55,19 @@ def write_matrix_activation_fc(input_matrix,fill_dimension,length,filename):
 
 def stretch_input(input_matrix,window_size = 5,padding=(0,0),stride=(1,1)):
     input_shape = input_matrix.shape
-    item_num = (input_shape[2] - window_size + 1) * (input_shape[3]-window_size + 1)
+    output_shape_row = int((input_shape[2] + 2*padding[0] -window_size) / stride[0] + 1)
+    output_shape_col = int((input_shape[3] + 2*padding[1] -window_size) / stride[1] + 1)
+    item_num = int(output_shape_row * output_shape_col)
     output_matrix = np.zeros((input_shape[0],item_num,input_shape[1]*window_size*window_size))
     iter = 0
-    for i in range( input_shape[2]-window_size + 1 ):
-        for j in range( input_shape[3]-window_size + 1 ):
+    if (padding[0] != 0):
+        input_tmp = np.zeros((input_shape[0], input_shape[1], input_shape[2] + padding[0]*2, input_shape[3] + padding[1] *2))
+        input_tmp[:, :, padding[0]: -padding[0], padding[1]: -padding[1]] = input_matrix
+        input_matrix = input_tmp
+    for i in range(output_shape_row):
+        for j in range(output_shape_col):
             for b in range(input_shape[0]):
-                output_matrix[b,iter,:] = input_matrix[b, :, i:i+window_size,j: j+window_size].reshape(input_shape[1]*window_size*window_size)
+                output_matrix[b,iter,:] = input_matrix[b, :, i*stride[0]:i*stride[0]+window_size,j*stride[1]:j*stride[1]+window_size].reshape(input_shape[1]*window_size*window_size)
             iter += 1
 
     return output_matrix
