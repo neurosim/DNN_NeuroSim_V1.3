@@ -140,9 +140,11 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 	if (cell.memCellType == Type::SRAM) {  //if array is SRAM
 		
 		//firstly calculate the CMOS resistance and capacitance
-		resCellAccess = CalculateOnResistance(cell.widthAccessCMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
-		capCellAccess = CalculateDrainCap(cell.widthAccessCMOS * tech.featureSize, NMOS, cell.widthInFeatureSize * tech.featureSize, tech);
-		cell.capSRAMCell = capCellAccess + CalculateDrainCap(cell.widthSRAMCellNMOS * tech.featureSize, NMOS, cell.widthInFeatureSize * tech.featureSize, tech) + CalculateDrainCap(cell.widthSRAMCellPMOS * tech.featureSize, PMOS, cell.widthInFeatureSize * tech.featureSize, tech) + CalculateGateCap(cell.widthSRAMCellNMOS * tech.featureSize, tech) + CalculateGateCap(cell.widthSRAMCellPMOS * tech.featureSize, tech);
+		resCellAccess = CalculateOnResistance(cell.widthAccessCMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, inputParameter.temperature, tech);
+		capCellAccess = CalculateDrainCap(cell.widthAccessCMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, cell.widthInFeatureSize / ((tech.featureSize <= 14*1e-9)? (MAX_TRANSISTOR_HEIGHT_FINFET/MAX_TRANSISTOR_HEIGHT):1) * tech.featureSize, tech);
+		cell.capSRAMCell = capCellAccess + CalculateDrainCap(cell.widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, cell.widthInFeatureSize / ((tech.featureSize <= 14*1e-9)? (MAX_TRANSISTOR_HEIGHT_FINFET/MAX_TRANSISTOR_HEIGHT):1) * tech.featureSize, tech) 
+						+ CalculateDrainCap(cell.widthSRAMCellPMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, PMOS, cell.widthInFeatureSize / ((tech.featureSize <= 14*1e-9)? (MAX_TRANSISTOR_HEIGHT_FINFET/MAX_TRANSISTOR_HEIGHT):1) * tech.featureSize, tech) 
+						+ CalculateGateCap(cell.widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, tech) + CalculateGateCap(cell.widthSRAMCellPMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, tech);
 
 		if (conventionalSequential) {
 			wlDecoder.Initialize(REGULAR_ROW, (int)ceil(log2(numRow)), false, false);
@@ -198,18 +200,25 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
     } else if (cell.memCellType == Type::RRAM || cell.memCellType == Type::FeFET) {
 		if (cell.accessType == CMOS_access) {	// 1T1R
 			cell.resCellAccess = cell.resistanceOn * IR_DROP_TOLERANCE;    //calculate access CMOS resistance
-			cell.widthAccessCMOS = CalculateOnResistance(tech.featureSize, NMOS, inputParameter.temperature, tech) * LINEAR_REGION_RATIO / cell.resCellAccess;   //get access CMOS width
-			if (cell.widthAccessCMOS > cell.widthInFeatureSize) {	// Place transistor vertically
+			cell.widthAccessCMOS = CalculateOnResistance(((tech.featureSize <= 14*1e-9)? 2:1)*tech.featureSize, NMOS, inputParameter.temperature, tech) * LINEAR_REGION_RATIO / cell.resCellAccess;   //get access CMOS width
+			double AccessCMOSsize = cell.widthAccessCMOS;
+			if (tech.featureSize == 14 * 1e-9){			//maxNumFin with same transistor height
+				AccessCMOSsize = ceil(AccessCMOSsize/3);
+			} else if (tech.featureSize == 10 * 1e-9){
+				AccessCMOSsize = ceil(AccessCMOSsize/3);
+			} else if (tech.featureSize == 7 * 1e-9){
+				AccessCMOSsize = ceil(AccessCMOSsize/2);
+			}
+			if (AccessCMOSsize > cell.widthInFeatureSize) {	// Place transistor vertically
 				printf("Transistor width of 1T1R=%.2fF is larger than the assigned cell width=%.2fF in layout\n", cell.widthAccessCMOS, cell.widthInFeatureSize);
 				exit(-1);
 			}
-
 			cell.resMemCellOn = cell.resCellAccess + cell.resistanceOn;        //calculate single memory cell resistance_ON
 			cell.resMemCellOff = cell.resCellAccess + cell.resistanceOff;      //calculate single memory cell resistance_OFF
 			cell.resMemCellAvg = cell.resCellAccess + cell.resistanceAvg;      //calculate single memory cell resistance_AVG
 
-			capRow2 += CalculateGateCap(cell.widthAccessCMOS * tech.featureSize, tech) * numCol;          //sum up all the gate cap of access CMOS, as the row cap
-			capCol += CalculateDrainCap(cell.widthAccessCMOS * tech.featureSize, NMOS, cell.widthInFeatureSize * tech.featureSize, tech) * numRow;	// If capCol is found to be too large, increase cell.widthInFeatureSize to relax the limit
+			capRow2 += CalculateGateCap(cell.widthAccessCMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, tech) * numCol;          //sum up all the gate cap of access CMOS, as the row cap
+			capCol += CalculateDrainCap(cell.widthAccessCMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, cell.widthInFeatureSize / ((tech.featureSize <= 14*1e-9)? (MAX_TRANSISTOR_HEIGHT_FINFET/MAX_TRANSISTOR_HEIGHT):1) * tech.featureSize, tech) * numRow;	// If capCol is found to be too large, increase cell.widthInFeatureSize to relax the limit
 		} else {	// Cross-point
 			cell.resMemCellOn = cell.resistanceOn;
 			cell.resMemCellOff = cell.resistanceOff;
