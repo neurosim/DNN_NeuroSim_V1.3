@@ -201,15 +201,11 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 		if (cell.accessType == CMOS_access) {	// 1T1R
 			cell.resCellAccess = cell.resistanceOn * IR_DROP_TOLERANCE;    //calculate access CMOS resistance
 			cell.widthAccessCMOS = CalculateOnResistance(((tech.featureSize <= 14*1e-9)? 2:1)*tech.featureSize, NMOS, inputParameter.temperature, tech) * LINEAR_REGION_RATIO / cell.resCellAccess;   //get access CMOS width
-			double AccessCMOSsize = cell.widthAccessCMOS;
-			if (tech.featureSize == 14 * 1e-9){			//maxNumFin with same transistor height
-				AccessCMOSsize = ceil(AccessCMOSsize/3);
-			} else if (tech.featureSize == 10 * 1e-9){
-				AccessCMOSsize = ceil(AccessCMOSsize/3);
-			} else if (tech.featureSize == 7 * 1e-9){
-				AccessCMOSsize = ceil(AccessCMOSsize/2);
+			double widthAccessInFeatureSize = cell.widthAccessCMOS;
+			if (tech.featureSize <= 14 * 1e-9){			
+				widthAccessInFeatureSize = ((cell.widthAccessCMOS-1) * tech.PitchFin + tech.widthFin) / tech.featureSize;  //convert #fin to F
 			}
-			if (AccessCMOSsize > cell.widthInFeatureSize) {	// Place transistor vertically
+			if (widthAccessInFeatureSize > cell.widthInFeatureSize) {	// Place transistor vertically
 				printf("Transistor width of 1T1R=%.2fF is larger than the assigned cell width=%.2fF in layout\n", cell.widthAccessCMOS, cell.widthInFeatureSize);
 				exit(-1);
 			}
