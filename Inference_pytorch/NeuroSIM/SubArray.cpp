@@ -1010,8 +1010,8 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 			
 			// Array leakage (assume 2 INV)
 			leakage = 0;
-			leakage += CalculateGateLeakage(INV, 1, cell.widthSRAMCellNMOS * tech.featureSize,
-					cell.widthSRAMCellPMOS * tech.featureSize, inputParameter.temperature, tech) * tech.vdd * 2;
+			leakage += CalculateGateLeakage(INV, 1, cell.widthSRAMCellNMOS * 2 * tech.featureSize,
+					cell.widthSRAMCellPMOS * 2 * tech.featureSize, inputParameter.temperature, tech) * tech.vdd * 2;
 			leakage *= numRow * numCol;
 
 			if (conventionalSequential) {
