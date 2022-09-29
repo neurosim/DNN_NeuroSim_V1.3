@@ -607,7 +607,7 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 					senseAmp.CalculateLatency(1);
 
 					// Read
-					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
+					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, inputParameter.temperature, tech);
 					double tau = (resCellAccess + resPullDown) * (capCellAccess + capCol) + resCol * capCol / 2;
 					tau *= log(tech.vdd / (tech.vdd - cell.minSenseVoltage / 2));   
 					double gm = CalculateTransconductance(cell.widthAccessCMOS * tech.featureSize, NMOS, tech);
@@ -671,7 +671,7 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 					}					
 
 					// Read
-					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
+					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, inputParameter.temperature, tech);
 					double tau = (resCellAccess + resPullDown) * (capCellAccess + capCol) + resCol * capCol / 2;
 					tau *= log(tech.vdd / (tech.vdd - cell.minSenseVoltage / 2));   
 					double gm = CalculateTransconductance(cell.widthAccessCMOS * tech.featureSize, NMOS, tech);
@@ -714,7 +714,7 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 					senseAmp.CalculateLatency(1);				
 					
 					// Read
-					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
+					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, inputParameter.temperature, tech);
 					double tau = (resCellAccess + resPullDown) * (capCellAccess + capCol) + resCol * capCol / 2;
 					tau *= log(tech.vdd / (tech.vdd - cell.minSenseVoltage / 2));   
 					double gm = CalculateTransconductance(cell.widthAccessCMOS * tech.featureSize, NMOS, tech);
@@ -761,7 +761,7 @@ void SubArray::CalculateLatency(double columnRes, const vector<double> &columnRe
 					}				
 					
 					// Read
-					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
+					double resPullDown = CalculateOnResistance(cell.widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, inputParameter.temperature, tech);
 					double tau = (resCellAccess + resPullDown) * (capCellAccess + capCol) + resCol * capCol / 2;
 					tau *= log(tech.vdd / (tech.vdd - cell.minSenseVoltage / 2));   
 					double gm = CalculateTransconductance(cell.widthAccessCMOS * tech.featureSize, NMOS, tech);
@@ -1010,8 +1010,8 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 			
 			// Array leakage (assume 2 INV)
 			leakage = 0;
-			leakage += CalculateGateLeakage(INV, 1, cell.widthSRAMCellNMOS * 2 * tech.featureSize,
-					cell.widthSRAMCellPMOS * 2 * tech.featureSize, inputParameter.temperature, tech) * tech.vdd * 2;
+			leakage += CalculateGateLeakage(INV, 1, cell.widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize,
+					cell.widthSRAMCellPMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, inputParameter.temperature, tech) * tech.vdd * 2;
 			leakage *= numRow * numCol;
 
 			if (conventionalSequential) {
