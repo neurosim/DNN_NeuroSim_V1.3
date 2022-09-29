@@ -148,12 +148,12 @@ void Buffer::CalculateLatency(double numAccessBitRead, double numRead, double nu
 				precharger.CalculateLatency(1e20, lengthCol * 0.2e-15/1e-6, (double) numBit/interface_width, (double) numBit/interface_width);
 				sramWriteDriver.CalculateLatency(1e20, lengthCol * 0.2e-15/1e-6, lengthCol * unitWireRes, (double) numBit/interface_width);
 				
-				double resCellAccess = CalculateOnResistance(param->widthAccessCMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
-				double capCellAccess = CalculateDrainCap(param->widthAccessCMOS * tech.featureSize, NMOS, param->widthInFeatureSizeSRAM * tech.featureSize, tech);
-				double resPullDown = CalculateOnResistance(param->widthSRAMCellNMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
+				double resCellAccess = CalculateOnResistance(param->widthAccessCMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, inputParameter.temperature, tech);
+				double capCellAccess = CalculateDrainCap(param->widthAccessCMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, param->widthInFeatureSizeSRAM * tech.featureSize, tech);
+				double resPullDown = CalculateOnResistance(param->widthSRAMCellNMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, inputParameter.temperature, tech);
 				double tau = (resCellAccess + resPullDown) * (capCellAccess + lengthCol * 0.2e-15/1e-6) + lengthCol * unitWireRes * (lengthCol * 0.2e-15/1e-6) / 2;
 				tau *= log(tech.vdd / (tech.vdd - param->minSenseVoltage / 2));   
-				double gm = CalculateTransconductance(param->widthAccessCMOS * tech.featureSize, NMOS, tech);
+				double gm = CalculateTransconductance(param->widthAccessCMOS * ((tech.featureSize <= 14*1e-9)? 2:1) * tech.featureSize, NMOS, tech);
 				double beta = 1 / (resPullDown * gm);
 				double colRamp = 0;
 				colDelay = horowitz(tau, beta, wlDecoder.rampOutput, &colRamp)*((double) numBit/interface_width);
