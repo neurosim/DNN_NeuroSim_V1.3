@@ -440,8 +440,8 @@ void TileCalculatePerformance(const vector<vector<double> > &newMemory, const ve
 				
 				// whether go through accumulation?
 				if (ceil((double)weightMatrixRow/(double)peSize) > 1) {
-					accumulationCM->CalculateLatency((int)(numInVector/param->numBitInput)*ceil(param->numColMuxed/param->numColPerSynapse), ceil((double)weightMatrixRow/(double)peSize), 0);
-					accumulationCM->CalculatePower((int)(numInVector/param->numBitInput)*ceil(param->numColMuxed/param->numColPerSynapse), ceil((double)weightMatrixRow/(double)peSize));
+					accumulationCM->CalculateLatency((int)(numInVector/param->numBitInput)*ceil((double)param->numColMuxed/(double)param->numColPerSynapse), ceil((double)weightMatrixRow/(double)peSize), 0);
+					accumulationCM->CalculatePower((int)(numInVector/param->numBitInput)*ceil((double)param->numColMuxed/(double)param->numColPerSynapse), ceil((double)weightMatrixRow/(double)peSize));
 					*readLatency += accumulationCM->readLatency; 
 					*readDynamicEnergy += accumulationCM->readDynamicEnergy;
 					*coreLatencyAccum += accumulationCM->readLatency; 
@@ -486,8 +486,8 @@ void TileCalculatePerformance(const vector<vector<double> > &newMemory, const ve
 					*coreEnergyOther += peEnergyOther;
 				}
 			}
-			accumulationCM->CalculateLatency((int)(numInVector/param->numBitInput)*ceil(param->numColMuxed/param->numColPerSynapse), numPE, 0);
-			accumulationCM->CalculatePower((int)(numInVector/param->numBitInput)*ceil(param->numColMuxed/param->numColPerSynapse), numPE);
+			accumulationCM->CalculateLatency((int)(numInVector/param->numBitInput)*ceil((double)param->numColMuxed/(double)param->numColPerSynapse), numPE, 0);
+			accumulationCM->CalculatePower((int)(numInVector/param->numBitInput)*ceil((double)param->numColMuxed/(double)param->numColPerSynapse), numPE);
 			*readLatency += accumulationCM->readLatency;
 			*readDynamicEnergy += accumulationCM->readDynamicEnergy;
 			*coreLatencyAccum += accumulationCM->readLatency;
