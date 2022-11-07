@@ -759,7 +759,7 @@ double ChipCalculatePerformance(InputParameter& inputParameter, Technology& tech
 									(int) netStructure[l][5]*numColPerSynapse/numtileEachLayerCol, numPENM, (int) netStructure[l][2]*numRowPerSynapse);
 
 				vector<vector<double> > tileInput;
-				tileInput = ReshapeInput(inputVector, i*desiredPESizeNM, (int) (netStructure[l][0]-netStructure[l][3]+1)*(netStructure[l][1]-netStructure[l][4]+1)*param->numBitInput, 
+				tileInput = ReshapeInput(inputVector, i*desiredPESizeNM, numInVector*param->numBitInput, 
 									(int) netStructure[l][2]*numRowPerSynapse/numtileEachLayerRow, numPENM, (int) netStructure[l][2]*numRowPerSynapse);
 	
 				
