@@ -230,7 +230,7 @@ void Technology::Initialize(int _featureSizeInNano, DeviceRoadmap _deviceRoadmap
 				vdd = 1.2;
 				vth = 501.3229e-3;
 				phyGateLength = 5.5e-8;
-				capIdealGate = 1.5413e-10;
+				capIdealGate = 1.5413e-9;
 				capFringe = 9.601334e-10;
 				effectiveResistanceMultiplier = 1.77;	/* from CACTI */
 				current_gmNmos=4.38E+01;
